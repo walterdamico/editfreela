@@ -11,7 +11,9 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false
   }
-});
+})
+
+const path = require('path');
 
 pool.connect((err, client, release) => {
   if (err) {
@@ -25,9 +27,10 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  res.send('O servidor do EditFreela está a correr perfeitamente!');
+  // Envia o arquivo index.html que está dentro da pasta views
+  res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
 app.listen(port, () => {
-  console.log(`Servidor a correr na porta ${port}`);
+  console.log(`Servidor funcionando na porta ${port}`);
 });
