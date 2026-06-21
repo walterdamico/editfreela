@@ -6,42 +6,33 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-async function criarTabelas() {
+async function atualizarBanco() {
   try {
-    console.log("Conectando ao banco de dados no Render...");
+    console.log("Atualizando estrutura do banco no Render...");
     
-    // 1. Tabela de Usuários
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        id SERIAL PRIMARY KEY,
-        tipo_usuario VARCHAR(50) NOT NULL,
-        nome VARCHAR(100) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        senha VARCHAR(255) NOT NULL,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    console.log("Tabela 'usuarios' verificada/criada.");
+    // 1. Adiciona as colunas de perfil na tabela de usuários se elas não existirem
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(50);`);
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS youtube VARCHAR(255);`);
+    console.log("Campos de perfil (whatsapp/youtube) verificados.");
 
-    // 2. Tabela de Vagas (Nova!)
-    // O campo 'cliente_id' conecta a vaga diretamente ao usuário que a criou
+    // 2. Cria a tabela de Solicitações de Interesse (Vaga <-> Editor)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS vagas (
+      CREATE TABLE IF NOT EXISTS solicitacoes (
         id SERIAL PRIMARY KEY,
-        cliente_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-        titulo VARCHAR(150) NOT NULL,
-        descricao TEXT NOT NULL,
-        orcamento NUMERIC(10, 2) NOT NULL,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        vaga_id INTEGER REFERENCES vagas(id) ON DELETE CASCADE,
+        editor_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+        status VARCHAR(50) DEFAULT 'pendente',
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(vaga_id, editor_id)
       );
     `);
-    console.log("Tabela 'vagas' criada com sucesso no Render!");
+    console.log("Tabela 'solicitacoes' pronta!");
 
   } catch (error) {
-    console.error("Erro ao criar tabelas:", error);
+    console.error("Erro ao atualizar banco:", error);
   } finally {
     pool.end();
   }
 }
 
-criarTabelas();
+atualizarBanco();
