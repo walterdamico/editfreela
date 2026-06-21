@@ -1,0 +1,26 @@
+{
+  "name": "editfreela",
+  "version": "1.0.0",
+  "description": "site freela :)\r Walter Santos Damico - 202465202AB",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walterdamico/editfreela.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/walterdamico/editfreela/issues"
+  },
+  "homepage": "https://github.com/walterdamico/editfreela#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "express": "^5.2.1",
+    "sqlite3": "^6.0.1"
+  }
+}
