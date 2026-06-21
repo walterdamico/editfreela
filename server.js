@@ -86,12 +86,10 @@ app.post('/api/perfil', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
   const { whatsapp, youtube } = req.body;
   await pool.query('UPDATE usuarios SET whatsapp = $1, youtube = $2 WHERE id = $3', [whatsapp, youtube, req.session.usuario.id]);
-  res.json({深度: true, sucesso: true });
+  res.json({ sucesso: true });
 });
 
-// --- OPERAÇÕES DO MURAL DE VAGAS ---
-
-// Listar vagas com checagem de preenchimento global e individual
+// --- OPERAÇÕES DO MURAL DE VAGAS (ORDEM CRONOLÓGICA ANTERIOR PRIMEIRO - ASC) ---
 app.get('/api/vagas', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
   const userId = req.session.usuario.id;
@@ -104,7 +102,7 @@ app.get('/api/vagas', async (req, res) => {
         FROM vagas v
         JOIN usuarios u ON v.cliente_id = u.id
         LEFT JOIN solicitacoes s ON v.id = s.vaga_id AND s.editor_id = $1
-        ORDER BY v.criado_em DESC`;
+        ORDER BY v.criado_em ASC`; // ASC garante que a proposta antiga (1) apareça antes da nova (2)
       const resultado = await pool.query(query, [userId]);
       return res.json(resultado.rows);
     } else {
@@ -114,7 +112,7 @@ app.get('/api/vagas', async (req, res) => {
           (SELECT COUNT(*) FROM solicitacoes WHERE vaga_id = v.id AND status = 'aprovada') > 0 AS vaga_aceita
         FROM vagas v
         JOIN usuarios u ON v.cliente_id = u.id
-        ORDER BY v.criado_em DESC`;
+        ORDER BY v.criado_em ASC`; // ASC garante que a proposta antiga (1) apareça antes da nova (2)
       const resultado = await pool.query(query);
       return res.json(resultado.rows);
     }
@@ -132,6 +130,11 @@ app.post('/api/vagas', async (req, res) => {
 
 app.put('/api/vagas/:id', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'cliente') return res.status(403).json({ erro: 'Negado' });
+  
+  // Trava de segurança: Bloqueia alterações se a vaga já tiver um editor aceito
+  const checar = await pool.query('SELECT id FROM solicitacoes WHERE vaga_id = $1 AND status = \'aprovada\'', [req.params.id]);
+  if (checar.rows.length > 0) return res.status(400).json({ erro: "Vaga ja finalizada e trancada" });
+
   const { titulo, descricao, orcamento } = req.body;
   await pool.query(
     'UPDATE vagas SET titulo = $1, descricao = $2, orcamento = $3 WHERE id = $4 AND cliente_id = $5',
@@ -142,13 +145,16 @@ app.put('/api/vagas/:id', async (req, res) => {
 
 app.delete('/api/vagas/:id', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'cliente') return res.status(403).json({ erro: 'Negado' });
+  
+  // Trava de segurança: Bloqueia exclusão se a vaga já tiver um editor aceito
+  const checar = await pool.query('SELECT id FROM solicitacoes WHERE vaga_id = $1 AND status = \'aprovada\'', [req.params.id]);
+  if (checar.rows.length > 0) return res.status(400).json({ erro: "Vaga ja finalizada e trancada" });
+
   await pool.query('DELETE FROM vagas WHERE id = $1 AND cliente_id = $2', [req.params.id, req.session.usuario.id]);
   res.json({ sucesso: true });
 });
 
-// --- SISTEMA DE SOLICITAÇÕES DE INTERESSE ---
-
-// Enviar Interesse
+// --- SISTEMA DE SOLICITAÇÕES ---
 app.post('/api/vagas/:id/candidatar', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'editor') return res.status(403).json({ erro: 'Apenas editores' });
   try {
@@ -159,14 +165,12 @@ app.post('/api/vagas/:id/candidatar', async (req, res) => {
   }
 });
 
-// Cancelar Solicitação Pendente
 app.delete('/api/vagas/:id/cancelar', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'editor') return res.status(403).json({ erro: 'Negado' });
   await pool.query('DELETE FROM solicitacoes WHERE vaga_id = $1 AND editor_id = $2 AND status = \'pendente\'', [req.params.id, req.session.usuario.id]);
   res.json({ sucesso: true });
 });
 
-// Ver Candidatos de uma Vaga
 app.get('/api/vagas/:id/solicitacoes', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'cliente') return res.status(403).json({ erro: 'Negado' });
   const query = `
@@ -179,7 +183,6 @@ app.get('/api/vagas/:id/solicitacoes', async (req, res) => {
   res.json(resultado.rows);
 });
 
-// Aceitar ou Recusar Candidato (Com automação de recusa em lote se aceito)
 app.put('/api/solicitacoes/:id', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'cliente') return res.status(403).json({ erro: 'Negado' });
   const { status, vagaId } = req.body;
@@ -187,12 +190,11 @@ app.put('/api/solicitacoes/:id', async (req, res) => {
 
   try {
     if (status === 'aprovada') {
-      // 1. Aprova o editor escolhido
+      // Aceita o escolhido e recusa automaticamente todos os demais concorrentes da vaga
       await pool.query('UPDATE solicitacoes SET status = \'aprovada\' WHERE id = $1', [solId]);
-      // 2. Transforma automaticamente todos os outros candidatos pendentes daquela vaga em recusados
       await pool.query('UPDATE solicitacoes SET status = \'recusada\' WHERE vaga_id = $1 AND id <> $2', [vagaId, solId]);
     } else {
-      // Apenas recusa o editor atual individualmente
+      // Recusa apenas o editor selecionado individualmente
       await pool.query('UPDATE solicitacoes SET status = \'recusada\' WHERE id = $1', [solId]);
     }
     res.json({ sucesso: true });
@@ -201,4 +203,4 @@ app.put('/api/solicitacoes/:id', async (req, res) => {
   }
 });
 
-app.listen(port, () => console.log(`Servidor na porta ${port}`));
+app.listen(port, () => console.log(`Servidor rodando com sucesso na porta ${port}`));
