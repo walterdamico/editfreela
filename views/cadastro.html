@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - EditFreela</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-light">
+
+    <!-- Barra de Navegação -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">EditFreela</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/mural">Mural de Vagas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Entrar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary ms-2 active" href="/cadastro">Cadastre-se</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Formulário de Cadastro -->
+    <div class="container mt-5 mb-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <h3 class="card-title text-center mb-4 fw-bold">Crie sua Conta</h3>
+                        
+                        <form id="formCadastro" action="/cadastro" method="POST" novalidate>
+                            
+                            <!-- Escolha do Tipo de Usuário -->
+                            <div class="mb-4">
+                                <label class="form-label d-block fw-bold">Qual é o seu objetivo no EditFreela?</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="tipo_usuario" id="tipoEditor" value="editor" required>
+                                    <label class="form-check-label" for="tipoEditor">Sou Editor de Vídeo</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="tipo_usuario" id="tipoCliente" value="cliente">
+                                    <label class="form-check-label" for="tipoCliente">Quero Contratar</label>
+                                </div>
+                                <div class="invalid-feedback d-block" id="erroTipo" style="display: none;">
+                                    Por favor, selecione um tipo de conta.
+                                </div>
+                            </div>
+
+                            <!-- Campo Nome -->
+                            <div class="mb-3">
+                                <label for="nome" class="form-label">Nome Completo</label>
+                                <input type="text" class="form-control" id="nome" name="nome" required>
+                                <div class="invalid-feedback" id="erroNome">
+                                    Insira o seu nome e sobrenome começando com letra maiúscula (apenas letras).
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="email" name="email" placeholder="exemplo@email.com.br" required>
+                                <div class="invalid-feedback" id="erroEmail">
+                                    O e-mail deve ser estritamente no formato @email.com.br
+                                </div>
+                            </div>
+
+                            <!-- Campo Senha -->
+                            <div class="mb-3">
+                                <label for="senha" class="form-label">Senha</label>
+                                <input type="password" class="form-control" id="senha" name="senha" required>
+                                <div class="invalid-feedback" id="erroSenha">
+                                    A senha deve ter pelo menos 6 caracteres.
+                                </div>
+                            </div>
+
+                            <!-- Campo Confirmar Senha -->
+                            <div class="mb-4">
+                                <label for="confirmarSenha" class="form-label">Confirme a Senha</label>
+                                <input type="password" class="form-control" id="confirmarSenha" required>
+                                <div class="invalid-feedback" id="erroConfirmarSenha">
+                                    As senhas não coincidem.
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 mt-2">Finalizar Cadastro</button>
+                        </form>
+                        
+                        <div class="text-center mt-4">
+                            <p class="mb-0">Já tem uma conta? <a href="/login" class="text-decoration-none">Faça Login</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica de Validação Front-End -->
+    <script>
+        document.getElementById('formCadastro').addEventListener('submit', function(event) {
+            let formValido = true;
+            
+            // Capturar os campos
+            const tipoEditor = document.getElementById('tipoEditor');
+            const tipoCliente = document.getElementById('tipoCliente');
+            const nome = document.getElementById('nome');
+            const email = document.getElementById('email');
+            const senha = document.getElementById('senha');
+            const confirmarSenha = document.getElementById('confirmarSenha');
+            
+            // Limpar erros anteriores
+            nome.classList.remove('is-invalid');
+            email.classList.remove('is-invalid');
+            senha.classList.remove('is-invalid');
+            confirmarSenha.classList.remove('is-invalid');
+            document.getElementById('erroTipo').style.display = 'none';
+
+            // 1. Verificar Tipo de Usuário (Radio buttons)
+            if (!tipoEditor.checked && !tipoCliente.checked) {
+                document.getElementById('erroTipo').style.display = 'block';
+                formValido = false;
+            }
+
+            // 2. Verificar Nome Completo (Sem números e com sobrenome)
+            // Regex: Pelo menos uma palavra com letras (aceitando acentos), seguida de um espaço, seguida de mais letras.
+            const regexNome = /^[A-ZÀ-ÖØ-Þ][a-zA-ZÀ-ÿ]*(?:\s+[A-ZÀ-ÖØ-Þ][a-zA-ZÀ-ÿ]*)+$/;
+            if (!nome.value.trim() || !regexNome.test(nome.value.trim())) {
+            nome.classList.add('is-invalid');
+            formValido = false;
+            console.log("Erro barrado: Nome não tem as iniciais maiúsculas ou está incompleto.");   
+        }
+
+            // 3. Verificar E-mail (@email.com.br)
+            // Adicionamos o \.br no final da regra
+            const regexEmail = /^[^\s@]+@email\.com\.br$/i;
+            if (!email.value.trim() || !regexEmail.test(email.value.trim())) {
+            email.classList.add('is-invalid');
+            formValido = false;
+            console.log("Erro barrado: E-mail fora do padrão @email.com.br.");
+            }
+
+            // 4. Verificar Senha
+            if (!senha.value.trim() || senha.value.length < 6) {
+                senha.classList.add('is-invalid');
+                formValido = false;
+            }
+
+            // 5. Verificar se as senhas coincidem
+            if (senha.value !== confirmarSenha.value || !confirmarSenha.value.trim()) {
+                confirmarSenha.classList.add('is-invalid');
+                formValido = false;
+            }
+
+            // Se inválido, bloqueia o envio
+            if (!formValido) {
+                event.preventDefault(); 
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
