@@ -57,7 +57,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success" id="btnSalvarVaga">Salvar</button>
+                        <button type="submit" class="btn btn-success">Salvar</button>
                     </div>
                 </form>
             </div>
@@ -72,7 +72,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ul class="list-group" id="listaCandidatos"></ul>
+                    <div id="listaCandidatos"></div>
                 </div>
             </div>
         </div>
@@ -82,6 +82,8 @@
     <script>
         let usuarioLogado = null;
         let idVagaSendoEditada = null; 
+        let vagasCarregadasMemoria = []; // Evita erros de aspas no HTML
+
         const bootstrapModalVaga = new bootstrap.Modal(document.getElementById('modalVaga'));
         const bootstrapModalSol = new bootstrap.Modal(document.getElementById('modalSolicitacoes'));
 
@@ -104,38 +106,62 @@
         async function carregarVagas() {
             const res = await fetch('/api/vagas');
             const vagas = await res.json();
+            vagasCarregadasMemoria = vagas; 
+            
             const container = document.getElementById('listaVagas');
             container.innerHTML = vagas.length === 0 ? '<p class="text-muted text-center py-5">Nenhuma vaga registrada.</p>' : '';
 
             vagas.forEach(vaga => {
                 let botoesHtml = '';
+                let badgeStatusGlobal = '';
+
+                // Se a vaga já foi ganha por alguém, bota a tag global "ACEITA"
+                if (vaga.vaga_aceita) {
+                    badgeStatusGlobal = `<span class="badge bg-success mb-2 d-inline-block fw-bold fs-6">ACEITA</span>`;
+                }
 
                 if (usuarioLogado.tipo === 'cliente') {
                     if (vaga.cliente_id === usuarioLogado.id) {
                         botoesHtml = `
-                            <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditar(${JSON.stringify(vaga).replace(/"/g, '&quot;')})">Editar</button>
+                            <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditar(${vaga.id})">Editar</button>
                             <button class="btn btn-danger btn-sm me-1" onclick="excluirVaga(${vaga.id})">Excluir</button>
                             <button class="btn btn-info text-white btn-sm" onclick="verSolicitacoes(${vaga.id})">Candidatos (${vaga.total_solicitacoes})</button>
                         `;
                     } else {
-                        botoesHtml = `<span class="text-muted small">Oportunidade de outro contratante</span>`;
+                        botoesHtml = `<span class="text-muted small">Vaga de outro contratante</span>`;
                     }
                 } else {
-                    if (!vaga.meu_status) {
-                        botoesHtml = `<button class="btn btn-primary btn-sm w-100" onclick="candidatarVaga(${vaga.id})">Enviar Interesse</button>`;
-                    } else if (vaga.meu_status === 'pendente') {
-                        botoesHtml = `<button class="btn btn-warning btn-sm w-100" disabled>Solicitação Pendente ⏳</button>`;
-                    } else if (vaga.meu_status === 'aprovada') {
-                        botoesHtml = `<button class="btn btn-success btn-sm w-100" disabled>Interesse Aceito! 🎉</button>`;
+                    // SE FOR EDITOR DE VÍDEO
+                    if (vaga.vaga_aceita) {
+                        // Se a vaga fechou e foi EU que ganhei
+                        if (vaga.meu_status === 'aprovada') {
+                            botoesHtml = `<div class="alert alert-success py-1 px-2 m-0 text-center fw-bold small">Solicitação Aceita 🎉</div>`;
+                        } else {
+                            // Se fechou e foi outro editor escolhido, ou se meu status virou recusado por tabela
+                            botoesHtml = `<div class="alert alert-danger py-1 px-2 m-0 text-center fw-bold small">Solicitação Recusada ❌</div>`;
+                        }
                     } else {
-                        botoesHtml = `<button class="btn btn-secondary btn-sm w-100" disabled>Recusado</button>`;
+                        // Se a vaga ainda está aberta
+                        if (!vaga.meu_status) {
+                            botoesHtml = `<button class="btn btn-primary btn-sm w-100" onclick="candidatarVaga(${vaga.id})">Enviar Interesse</button>`;
+                        } else if (vaga.meu_status === 'pendente') {
+                            botoesHtml = `
+                                <div class="alert alert-warning py-1 px-2 mb-2 text-center fw-bold small">Solicitação Pendente ⏳</div>
+                                <button class="btn btn-outline-danger btn-sm w-100" onclick="cancelarSolicitacao(${vaga.id})">Cancelar Solicitação</button>
+                            `;
+                        } else if (vaga.meu_status === 'recusada') {
+                            botoesHtml = `<div class="alert alert-danger py-1 px-2 m-0 text-center fw-bold small">Solicitação Recusada ❌</div>`;
+                        }
                     }
                 }
 
                 container.innerHTML += `
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card h-100 border-0 shadow-sm p-3">
-                            <span class="badge bg-secondary mb-2 align-self-start">#${vaga.id}</span>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <span class="badge bg-secondary mb-2">#${vaga.id}</span>
+                                ${badgeStatusGlobal}
+                            </div>
                             <h5 class="fw-bold text-dark">${vaga.titulo}</h5>
                             <p class="text-muted">${vaga.descricao}</p>
                             <hr>
@@ -147,7 +173,6 @@
             });
         }
 
-        // ALTERAÇÃO DE INSERÇÃO / EDIÇÃO TRANSPARENTE
         function abrirModalCriar() {
             idVagaSendoEditada = null;
             document.getElementById('modalVagaLabel').innerText = "Publicar Nova Oportunidade";
@@ -155,8 +180,10 @@
             bootstrapModalVaga.show();
         }
 
-        function abrirModalEditar(vaga) {
-            idVagaSendoEditada = vaga.id;
+        function abrirModalEditar(id) {
+            idVagaSendoEditada = id;
+            const vaga = vagasCarregadasMemoria.find(v => v.id === id);
+            
             document.getElementById('modalVagaLabel').innerText = "Editar Oportunidade";
             document.getElementById('vagaTitulo').value = vaga.titulo;
             document.getElementById('vagaDescricao').value = vaga.descricao;
@@ -194,22 +221,29 @@
 
         async function candidatarVaga(id) {
             if (!usuarioLogado.whatsapp) {
-                alert("Atenção! Configure seu número de WhatsApp no perfil antes de se candidatar.");
+                alert("Atenção! Você precisa cadastrar seu número de WhatsApp nas configurações de perfil antes de se candidatar.");
                 window.location.href = '/perfil';
                 return;
             }
             await fetch(`/api/vagas/${id}/candidatar`, { method: 'POST' });
-            alert("Interesse enviado com sucesso!");
+            alert("Interesse enviado!");
             carregarVagas();
         }
 
-        // GERENCIAMENTO DE CANDIDATURAS PELO CLIENTE
+        async function cancelarSolicitacao(id) {
+            if (confirm("Tem certeza que deseja remover seu interesse desta vaga?")) {
+                await fetch(`/api/vagas/${id}/cancelar`, { method: 'DELETE' });
+                carregarVagas();
+            }
+        }
+
+        // CONTROLADOR DE CANDIDATOS DO CLIENTE
         async function verSolicitacoes(vagaId) {
             const res = await fetch(`/api/vagas/${vagaId}/solicitacoes`);
             const sols = await res.json();
             const listContainer = document.getElementById('listaCandidatos');
             
-            listContainer.innerHTML = sols.length === 0 ? '<p class="text-muted p-3">Nenhum editor se candidatou ainda.</p>' : '';
+            listContainer.innerHTML = sols.length === 0 ? '<p class="text-muted p-3 text-center">Nenhum editor se candidatou ainda.</p>' : '';
 
             sols.forEach(s => {
                 let acoes = '';
@@ -222,33 +256,49 @@
                     const linkWa = `https://wa.me/${s.whatsapp}`;
                     acoes = `
                         <span class="badge bg-success p-2 me-2">Aprovado</span>
-                        <a href="${linkWa}" target="_blank" class="btn btn-sm btn-outline-success">Chamar no WhatsApp</a>
+                        <a href="${linkWa}" target="_blank" class="btn btn-sm btn-success">Abrir Conversa</a>
                     `;
                 } else {
                     acoes = `<span class="badge bg-secondary p-2">Recusado</span>`;
                 }
 
-                const ytLink = s.youtube ? `<a href="${s.youtube}" target="_blank" class="d-block small text-primary">Ver Canal do YouTube/Portfólio</a>` : '<small class="text-muted d-block">Sem portfólio registrado</small>';
+                // Links de Portfólio configurados para carregar ocultos por padrão
+                const ytLink = s.youtube ? `<a href="${s.youtube}" target="_blank" class="text-primary fw-bold">${s.youtube}</a>` : '<span class="text-muted">Não inserido</span>';
+                const waNumero = s.whatsapp ? `<a href="https://wa.me/${s.whatsapp}" target="_blank" class="text-success fw-bold">${s.whatsapp}</a>` : '<span class="text-muted">Não inserido</span>';
 
                 listContainer.innerHTML += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong class="d-block text-dark">${s.editor_nome}</strong>
-                            ${ytLink}
+                    <div class="card p-3 mb-2 border rounded shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong class="fs-5 text-dark">${s.editor_nome}</strong>
+                                <span class="badge bg-light text-dark ms-2 border">Status: ${s.status.toUpperCase()}</span>
+                            </div>
+                            <div>${acoes}</div>
                         </div>
-                        <div>${acoes}</div>
-                    </li>`;
+                        
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="document.getElementById('perfil-box-${s.id}').classList.toggle('d-none')">
+                                🔍 Visualizar Perfil / Contatos
+                            </button>
+                        </div>
+                        
+                        <div id="perfil-box-${s.id}" class="d-none mt-2 p-3 bg-white border rounded">
+                            <p class="mb-1"><strong>WhatsApp para Contato:</strong> ${waNumero}</p>
+                            <p class="mb-0"><strong>Portfólio / Canal do YouTube:</strong> ${ytLink}</p>
+                        </div>
+                    </div>`;
             });
 
             bootstrapModalSol.show();
         }
 
-        async function actualizarStatusSolicitacao(solId, novoStatus, vagaId) {
+        async function atualizarStatusSolicitacao(solId, novoStatus, vagaId) {
             await fetch(`/api/solicitacoes/${solId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: novoStatus })
+                body: JSON.stringify({ status: novoStatus, vagaId: vagaId })
             });
+            // Atualiza a janela aberta e o mural principal
             verSolicitacoes(vagaId);
             carregarVagas();
         }
