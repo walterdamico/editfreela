@@ -91,6 +91,32 @@ app.post('/api/perfil', async (req, res) => {
   res.json({ sucesso: true });
 });
 
+// === NOVA ROTA: EXCLUSÃO DE CONTA ===
+app.delete('/api/usuario', async (req, res) => {
+  if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
+  const userId = req.session.usuario.id;
+
+  try {
+    // 1. Apaga candidaturas/solicitações feitas por este usuário (se for editor)
+    await pool.query('DELETE FROM solicitacoes WHERE editor_id = $1', [userId]);
+
+    // 2. Apaga candidaturas/solicitações que as vagas deste usuário receberam (se for cliente)
+    await pool.query('DELETE FROM solicitacoes WHERE vaga_id IN (SELECT id FROM vagas WHERE cliente_id = $1)', [userId]);
+
+    // 3. Apaga todas as vagas criadas por este usuário (se for cliente)
+    await pool.query('DELETE FROM vagas WHERE cliente_id = $1', [userId]);
+
+    // 4. Apaga o usuário do banco de dados (removerá email, senha, etc.)
+    await pool.query('DELETE FROM usuarios WHERE id = $1', [userId]);
+
+    // 5. Destrói a sessão do navegador
+    req.session.destroy();
+    res.json({ sucesso: true });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao excluir conta' });
+  }
+});
+
 // --- OPERAÇÕES DO MURAL DE VAGAS ---
 app.get('/api/vagas', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
@@ -111,9 +137,16 @@ app.get('/api/vagas', async (req, res) => {
       const query = `
         SELECT v.*, u.nome AS contratante,
           (SELECT COUNT(*) FROM solicitacoes WHERE vaga_id = v.id) AS total_solicitacoes,
-          (SELECT COUNT(*) FROM solicitacoes WHERE vaga_id = v.id AND status = 'aprovada') > 0 AS vaga_aceita
+          (SELECT COUNT(*) FROM solicitacoes WHERE vaga_id = v.id AND status = 'aprovada') > 0 AS vaga_aceita,
+          u_aceito.nome AS editor_nome,
+          u_aceito.whatsapp AS editor_whatsapp,
+          u_aceito.email AS editor_email,
+          u_aceito.youtube AS editor_youtube,
+          u_aceito.descricao AS editor_descricao
         FROM vagas v
         JOIN usuarios u ON v.cliente_id = u.id
+        LEFT JOIN solicitacoes s_aceita ON s_aceita.vaga_id = v.id AND s_aceita.status = 'aprovada'
+        LEFT JOIN usuarios u_aceito ON s_aceita.editor_id = u_aceito.id
         ORDER BY v.criado_em ASC`; 
       const resultado = await pool.query(query);
       return res.json(resultado.rows);
