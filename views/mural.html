@@ -8,13 +8,11 @@
 </head>
 <body class="bg-light">
 
-    <!-- BARRA DE NAVEGAÇÃO -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/mural">EditFreela</a>
             <div class="d-flex align-items-center">
-                <a class="btn btn-outline-light btn-sm me-3" href="/perfil">Configurar Meu Perfil</a>
-                <!-- REQUISITO 3: Nome e Função abaixo alinhados à esquerda do bloco de usuário -->
+                <a class="btn btn-outline-light btn-sm me-3" href="/perfil">Configurar Perfil</a>
                 <div class="text-white text-start me-3 lh-sm">
                     <span id="nomeUsuario" class="fw-bold d-block">Carregando...</span>
                     <small id="funcaoUsuario" class="text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; color: #a0a0a0 !important;">Carregando...</small>
@@ -24,7 +22,6 @@
         </div>
     </nav>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <div class="container mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -39,7 +36,6 @@
         <div class="row" id="listaVagas"></div>
     </div>
 
-    <!-- MODAL DE CRIAR / EDITAR VAGA -->
     <div class="modal fade" id="modalVaga" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -51,12 +47,10 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Título da Vaga</label>
-                            <!-- REQUISITO 4: Placeholder descritivo restaurado -->
                             <input type="text" class="form-control" id="vagaTitulo" placeholder="Ex: Edição de Vídeo para YouTube - Canal de Finanças" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Descrição do Projeto</label>
-                            <!-- REQUISITO 4: Instruções de duração, finalidade e estilo restauradas -->
                             <textarea class="form-control" id="vagaDescricao" rows="5" placeholder="Insira as informações necessárias para o editor (Exemplo: Duração estimada do vídeo, para qual finalidade/plataforma ele serve, ritmo da edição, estilo visual e referências)." required></textarea>
                         </div>
                         <div class="mb-3">
@@ -73,7 +67,6 @@
         </div>
     </div>
 
-    <!-- MODAL DOS CANDIDATOS (PAINEL DO CLIENTE) -->
     <div class="modal fade" id="modalSolicitacoes" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -101,7 +94,6 @@
             const respostaUsuario = await fetch('/api/usuario');
             usuarioLogado = await respostaUsuario.json();
             
-            // Exibição do nome e da função abaixo dele
             document.getElementById('nomeUsuario').innerText = usuarioLogado.nome;
             const funcaoTexto = usuarioLogado.tipo === 'cliente' ? 'Contratante' : 'Editor de Vídeo';
             document.getElementById('funcaoUsuario').innerText = funcaoTexto;
@@ -110,7 +102,7 @@
                 document.getElementById('subtituloPerfil').innerText = "Gerencie suas vagas enviadas ou crie novas.";
                 document.getElementById('btnCriarVaga').classList.remove('d-none');
             } else {
-                document.getElementById('subtituloPerfil').innerText = "Encontre demandas e envie solicitações de interesse.";
+                document.getElementById('subtituloPerfil').innerText = "Encontre e envie solicitações de interesse.";
             }
 
             carregarVagas();
@@ -132,14 +124,11 @@
                     badgeStatusGlobal = `<span class="badge bg-success mb-2 d-inline-block fw-bold fs-6">ACEITA</span>`;
                 }
 
-                // REQUISITO 5: Controle de Proposta Intocável se estiver Aceita
                 if (usuarioLogado.tipo === 'cliente') {
                     if (vaga.cliente_id === usuarioLogado.id) {
                         if (vaga.vaga_aceita) {
-                            // Se foi aceita, some botões de editar, excluir e candidatos. Exibe apenas o texto explicativo.
-                            botoesHtml = `<div class="text-success small fw-bold text-center border p-2 bg-white rounded">Contratação concluída. </div>`;
+                            botoesHtml = `<div class="text-success small fw-bold text-center border p-2 bg-white rounded">Contratação concluída. Esta vaga está finalizada e trancada.</div>`;
                         } else {
-                            // Se não foi aceita, mantém os botões ativos normalmente
                             botoesHtml = `
                                 <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditar(${vaga.id})">Editar</button>
                                 <button class="btn btn-danger btn-sm me-1" onclick="excluirVaga(${vaga.id})">Excluir</button>
@@ -150,7 +139,6 @@
                         botoesHtml = `<span class="text-muted small">Vaga de outro contratante</span>`;
                     }
                 } else {
-                    // Visão do Editor de Vídeo
                     if (vaga.vaga_aceita) {
                         if (vaga.meu_status === 'aprovada') {
                             botoesHtml = `<div class="alert alert-success py-1 px-2 m-0 text-center fw-bold small">Solicitação Aceita</div>`;
@@ -277,16 +265,16 @@
                         <button class="btn btn-danger btn-sm" onclick="atualizarStatusSolicitacao(${s.id}, 'recusada', ${vagaId})">Recusar</button>
                     `;
                 } else if (s.status === 'aprovada') {
-                    // REQUISITO 2: Removido o link/botao direto que redirecionava para o WhatsApp aqui ao lado da badge
-                    acoes = `
-                        <span class="badge bg-success p-2">Aprovado</span>
-                    `;
+                    acoes = `<span class="badge bg-success p-2">Aprovado</span>`;
                 } else {
                     acoes = `<span class="badge bg-secondary p-2">Recusado</span>`;
                 }
 
+                // Novos campos puxando E-mail e Descrição
                 const ytLink = s.youtube ? `<a href="${s.youtube}" target="_blank" class="text-primary fw-bold">${s.youtube}</a>` : '<span class="text-muted">Não inserido</span>';
                 const waNumero = s.whatsapp ? `<span class="text-dark fw-bold">${s.whatsapp}</span>` : '<span class="text-muted">Não inserido</span>';
+                const emailTexto = s.email ? `<span class="text-dark fw-bold">${s.email}</span>` : '<span class="text-muted">Não inserido</span>';
+                const descTexto = s.descricao ? s.descricao : '<span class="text-muted fst-italic">O usuário ainda não escreveu uma descrição no perfil.</span>';
 
                 listContainer.innerHTML += `
                     <div class="card p-3 mb-2 border rounded shadow-sm bg-white">
@@ -298,16 +286,19 @@
                             <div>${acoes}</div>
                         </div>
                         
-                        <!-- Aba de visualização interna do Perfil (WhatsApp e Youtube permanecem salvos aqui dentro) -->
                         <div class="mt-2">
                             <button class="btn btn-sm btn-outline-secondary" type="button" onclick="document.getElementById('perfil-box-${s.id}').classList.toggle('d-none')">
-                                Visualizar Perfil / Contatos
+                                Visualizar Perfil Completo
                             </button>
                         </div>
                         
-                        <div id="perfil-box-${s.id}" class="d-none mt-2 p-3 bg-light border rounded">
-                            <p class="mb-1"><strong>WhatsApp para Contato:</strong> ${waNumero}</p>
-                            <p class="mb-0"><strong>Portfolio / Canal do YouTube:</strong> ${ytLink}</p>
+                        <div id="perfil-box-${s.id}" class="d-none mt-3 p-3 bg-light border rounded">
+                            <h6 class="fw-bold text-dark mb-2">Sobre o Editor:</h6>
+                            <p class="small text-muted mb-3" style="white-space: pre-wrap;">${descTexto}</p>
+                            <hr class="text-secondary">
+                            <p class="mb-1 small"><strong>E-mail:</strong> ${emailTexto}</p>
+                            <p class="mb-1 small"><strong>WhatsApp:</strong> ${waNumero}</p>
+                            <p class="mb-0 small"><strong>Portfólio:</strong> ${ytLink}</p>
                         </div>
                     </div>`;
             });
@@ -322,7 +313,6 @@
                 body: JSON.stringify({ status: novoStatus, vagaId: vagaId })
             });
             
-            // Se aceitou um candidato, fecha a janela atual automaticamente pois a vaga foi trancada globalmente
             if(novoStatus === 'aprovada') {
                 bootstrapModalSol.hide();
             } else {

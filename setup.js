@@ -8,25 +8,11 @@ const pool = new Pool({
 
 async function atualizarBanco() {
   try {
-    console.log("Atualizando estrutura do banco no Render...");
+    console.log("Conectando ao banco de dados no Render...");
     
-    // 1. Adiciona as colunas de perfil na tabela de usuários se elas não existirem
-    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(50);`);
-    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS youtube VARCHAR(255);`);
-    console.log("Campos de perfil (whatsapp/youtube) verificados.");
-
-    // 2. Cria a tabela de Solicitações de Interesse (Vaga <-> Editor)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS solicitacoes (
-        id SERIAL PRIMARY KEY,
-        vaga_id INTEGER REFERENCES vagas(id) ON DELETE CASCADE,
-        editor_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-        status VARCHAR(50) DEFAULT 'pendente',
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(vaga_id, editor_id)
-      );
-    `);
-    console.log("Tabela 'solicitacoes' pronta!");
+    // Adiciona o campo de descrição se ele não existir
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS descricao TEXT;`);
+    console.log("Nova coluna 'descricao' adicionada com sucesso à tabela 'usuarios'!");
 
   } catch (error) {
     console.error("Erro ao atualizar banco:", error);

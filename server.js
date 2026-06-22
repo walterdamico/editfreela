@@ -75,21 +75,23 @@ app.get('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-// --- API DE USUÁRIO ---
+// --- API DE USUÁRIO E PERFIL ---
 app.get('/api/usuario', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
-  const dados = await pool.query('SELECT id, nome, tipo_usuario AS tipo, whatsapp, youtube FROM usuarios WHERE id = $1', [req.session.usuario.id]);
+  // Agora puxamos o email e a descrição também
+  const dados = await pool.query('SELECT id, nome, email, tipo_usuario AS tipo, whatsapp, youtube, descricao FROM usuarios WHERE id = $1', [req.session.usuario.id]);
   res.json(dados.rows[0]);
 });
 
 app.post('/api/perfil', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
-  const { whatsapp, youtube } = req.body;
-  await pool.query('UPDATE usuarios SET whatsapp = $1, youtube = $2 WHERE id = $3', [whatsapp, youtube, req.session.usuario.id]);
+  const { whatsapp, youtube, descricao } = req.body;
+  // Atualiza também a descrição no banco
+  await pool.query('UPDATE usuarios SET whatsapp = $1, youtube = $2, descricao = $3 WHERE id = $4', [whatsapp, youtube, descricao, req.session.usuario.id]);
   res.json({ sucesso: true });
 });
 
-// --- OPERAÇÕES DO MURAL DE VAGAS (ORDEM CRONOLÓGICA ANTERIOR PRIMEIRO - ASC) ---
+// --- OPERAÇÕES DO MURAL DE VAGAS ---
 app.get('/api/vagas', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
   const userId = req.session.usuario.id;
@@ -102,7 +104,7 @@ app.get('/api/vagas', async (req, res) => {
         FROM vagas v
         JOIN usuarios u ON v.cliente_id = u.id
         LEFT JOIN solicitacoes s ON v.id = s.vaga_id AND s.editor_id = $1
-        ORDER BY v.criado_em ASC`; // ASC garante que a proposta antiga (1) apareça antes da nova (2)
+        ORDER BY v.criado_em ASC`; 
       const resultado = await pool.query(query, [userId]);
       return res.json(resultado.rows);
     } else {
@@ -112,7 +114,7 @@ app.get('/api/vagas', async (req, res) => {
           (SELECT COUNT(*) FROM solicitacoes WHERE vaga_id = v.id AND status = 'aprovada') > 0 AS vaga_aceita
         FROM vagas v
         JOIN usuarios u ON v.cliente_id = u.id
-        ORDER BY v.criado_em ASC`; // ASC garante que a proposta antiga (1) apareça antes da nova (2)
+        ORDER BY v.criado_em ASC`; 
       const resultado = await pool.query(query);
       return res.json(resultado.rows);
     }
@@ -130,8 +132,6 @@ app.post('/api/vagas', async (req, res) => {
 
 app.put('/api/vagas/:id', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'cliente') return res.status(403).json({ erro: 'Negado' });
-  
-  // Trava de segurança: Bloqueia alterações se a vaga já tiver um editor aceito
   const checar = await pool.query('SELECT id FROM solicitacoes WHERE vaga_id = $1 AND status = \'aprovada\'', [req.params.id]);
   if (checar.rows.length > 0) return res.status(400).json({ erro: "Vaga ja finalizada e trancada" });
 
@@ -145,8 +145,6 @@ app.put('/api/vagas/:id', async (req, res) => {
 
 app.delete('/api/vagas/:id', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'cliente') return res.status(403).json({ erro: 'Negado' });
-  
-  // Trava de segurança: Bloqueia exclusão se a vaga já tiver um editor aceito
   const checar = await pool.query('SELECT id FROM solicitacoes WHERE vaga_id = $1 AND status = \'aprovada\'', [req.params.id]);
   if (checar.rows.length > 0) return res.status(400).json({ erro: "Vaga ja finalizada e trancada" });
 
@@ -173,8 +171,9 @@ app.delete('/api/vagas/:id/cancelar', async (req, res) => {
 
 app.get('/api/vagas/:id/solicitacoes', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'cliente') return res.status(403).json({ erro: 'Negado' });
+  // Agora a query puxa também o email e a descricao do editor
   const query = `
-    SELECT s.id, s.status, s.vaga_id, u.nome AS editor_nome, u.whatsapp, u.youtube 
+    SELECT s.id, s.status, s.vaga_id, u.nome AS editor_nome, u.whatsapp, u.youtube, u.email, u.descricao 
     FROM solicitacoes s
     JOIN usuarios u ON s.editor_id = u.id
     JOIN vagas v ON s.vaga_id = v.id
@@ -190,11 +189,9 @@ app.put('/api/solicitacoes/:id', async (req, res) => {
 
   try {
     if (status === 'aprovada') {
-      // Aceita o escolhido e recusa automaticamente todos os demais concorrentes da vaga
       await pool.query('UPDATE solicitacoes SET status = \'aprovada\' WHERE id = $1', [solId]);
       await pool.query('UPDATE solicitacoes SET status = \'recusada\' WHERE vaga_id = $1 AND id <> $2', [vagaId, solId]);
     } else {
-      // Recusa apenas o editor selecionado individualmente
       await pool.query('UPDATE solicitacoes SET status = \'recusada\' WHERE id = $1', [solId]);
     }
     res.json({ sucesso: true });

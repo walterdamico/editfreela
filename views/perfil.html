@@ -20,16 +20,28 @@
             <p class="text-muted">Mantenha seus dados atualizados para que os contratantes possam te encontrar.</p>
             
             <form id="formPerfil">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">E-mail Cadastrado</label>
+                    <input type="email" class="form-control bg-light" id="email" readonly disabled>
+                    <small class="text-muted">Este é o seu e-mail de login, não é possível alterá-lo.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Sobre mim / Descrição</label>
+                    <textarea class="form-control" id="descricao" rows="4" placeholder="Fale um pouco sobre você, quais softwares utiliza (ex: Premiere, After Effects), seu estilo e experiência..."></textarea>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Número do WhatsApp (com DDD)</label>
                     <input type="text" class="form-control" id="whatsapp" placeholder="Ex: 24999998888" required>
-                    <small class="text-muted">Apenas números. Será usado para gerar o link direto de conversa.</small>
+                    <small class="text-muted">Digite EXATAMENTE 11 números, sem letras, espaços, parênteses ou traços.</small>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Link do Canal do YouTube (Opcional)</label>
-                    <input type="url" class="form-control" id="youtube" placeholder="https://youtube.com/seu-canal">
-                    <small class="text-muted">Insira seu portfólio de edições se tiver.</small>
+                    <input type="text" class="form-control" id="youtube" placeholder="https://www.youtube.com/@SeuCanal">
+                    <small class="text-muted">Insira seu portfólio de edições se tiver. O link deve ser do YouTube.</small>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 fw-bold mt-3">Salvar Alterações</button>
@@ -43,19 +55,40 @@
             const res = await fetch('/api/usuario');
             const user = await res.json();
             
+            if (user.email) document.getElementById('email').value = user.email;
             if (user.whatsapp) document.getElementById('whatsapp').value = user.whatsapp;
             if (user.youtube) document.getElementById('youtube').value = user.youtube;
+            if (user.descricao) document.getElementById('descricao').value = user.descricao;
         });
 
         document.getElementById('formPerfil').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const whatsapp = document.getElementById('whatsapp').value;
-            const youtube = document.getElementById('youtube').value;
+            const whatsapp = document.getElementById('whatsapp').value.trim();
+            const youtube = document.getElementById('youtube').value.trim();
+            const descricao = document.getElementById('descricao').value.trim();
 
+            // 1. VALIDAÇÃO DO WHATSAPP (Apenas 11 dígitos numéricos, nada mais)
+            const regexWhatsapp = /^\d{11}$/;
+            if (!regexWhatsapp.test(whatsapp)) {
+                alert("Número de WhatsApp inválido! Por favor, digite exatamente 11 números (2 do DDD + 9 números), sem espaços, letras ou qualquer outro símbolo.");
+                return; // Impede de salvar
+            }
+
+            // 2. VALIDAÇÃO DO YOUTUBE (Apenas links do YouTube válidos)
+            if (youtube !== "") {
+                // Regex que exige que o domínio seja youtube.com ou youtu.be e tenha algum caminho (o canal ou vídeo) depois da barra
+                const regexYoutube = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i;
+                if (!regexYoutube.test(youtube)) {
+                    alert("O link do YouTube é inválido!\n\nPor favor, insira o endereço completo de um canal ou vídeo.\nExemplo: https://www.youtube.com/@SeuCanal");
+                    return; // Impede de salvar
+                }
+            }
+
+            // Se passou pelas validações, envia para o servidor
             const res = await fetch('/api/perfil', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ whatsapp, youtube })
+                body: JSON.stringify({ whatsapp, youtube, descricao })
             });
 
             const dados = await res.json();
