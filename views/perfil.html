@@ -51,7 +51,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            // Carrega os dados atuais do banco para preencher o form
+            //carrega os dados do banco para preencher o form
             const res = await fetch('/api/usuario');
             const user = await res.json();
             
@@ -67,24 +67,24 @@
             const youtube = document.getElementById('youtube').value.trim();
             const descricao = document.getElementById('descricao').value.trim();
 
-            // 1. VALIDAÇÃO DO WHATSAPP (Apenas 11 dígitos numéricos, nada mais)
+            //VALIDAR WHATSAPP (11 dígitos numéricos)
             const regexWhatsapp = /^\d{11}$/;
             if (!regexWhatsapp.test(whatsapp)) {
                 alert("Número de WhatsApp inválido! Por favor, digite exatamente 11 números (2 do DDD + 9 números), sem espaços, letras ou qualquer outro símbolo.");
-                return; // Impede de salvar
+                return;
             }
 
-            // 2. VALIDAÇÃO DO YOUTUBE (Apenas links do YouTube válidos)
+            //VALIDAR DO YOUTUBE (apenas links válidos do youtube )
             if (youtube !== "") {
-                // Regex que exige que o domínio seja youtube.com ou youtu.be e tenha algum caminho (o canal ou vídeo) depois da barra
+                //regex que exige que o domínio seja youtube.com ou youtu.be e tenha algum caminho (o canal ou vídeo) depois da barra
                 const regexYoutube = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i;
                 if (!regexYoutube.test(youtube)) {
                     alert("O link do YouTube é inválido!\n\nPor favor, insira o endereço completo de um canal ou vídeo.\nExemplo: https://www.youtube.com/@SeuCanal");
-                    return; // Impede de salvar
+                    return; 
                 }
             }
 
-            // Se passou pelas validações, envia para o servidor
+            //passou pelas validações? envia para o servidor
             const res = await fetch('/api/perfil', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

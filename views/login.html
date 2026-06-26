@@ -9,7 +9,7 @@
 </head>
 <body class="bg-light">
 
-    <!-- Barra de Navegação -->
+    <!--Barra de Navegação-->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/">EditFreela</a>
@@ -32,7 +32,7 @@
         </div>
     </nav>
 
-    <!-- Formulário de Login -->
+    <!--Formulário de Login-->
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-4">
@@ -40,10 +40,9 @@
                     <div class="card-body p-4">
                         <h3 class="card-title text-center mb-4 fw-bold">Entrar</h3>
                         
-                        <!-- O 'novalidate' desativa os alertas feios do navegador para usarmos os nossos -->
                         <form id="formLogin" action="/login" method="POST" novalidate>
                             
-                            <!-- Campo E-mail -->
+                            <!--email-->
                             <div class="mb-3">
                                 <label for="email" class="form-label">E-mail</label>
                                 <input type="email" class="form-control" id="email" name="email" required>
@@ -52,7 +51,7 @@
                                 </div>
                             </div>
 
-                            <!-- Campo Senha -->
+                            <!--senha-->
                             <div class="mb-3">
                                 <label for="senha" class="form-label">Senha</label>
                                 <input type="password" class="form-control" id="senha" name="senha" required>
@@ -73,34 +72,34 @@
         </div>
     </div>
 
-    <!-- Lógica de Validação Front-End -->
+    <!--Validação Front-End-->
     <script>
         document.getElementById('formLogin').addEventListener('submit', function(event) {
             let formValido = true;
             
-            // Capturar os campos
+            //capturar campos
             const email = document.getElementById('email');
             const senha = document.getElementById('senha');
             
-            // Limpar os erros anteriores
+            //limpa os erros 
             email.classList.remove('is-invalid');
             senha.classList.remove('is-invalid');
 
-            // 1. Verificar E-mail (Se está vazio ou se não tem formato de e-mail)
+            //verifica email (Se está vazio ou se não tem formato de e-mail)
             const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!email.value.trim() || !regexEmail.test(email.value)) {
                 email.classList.add('is-invalid');
                 formValido = false;
             }
 
-            // 2. Verificar Senha (exemplo: não pode estar vazia e mínimo 6 caracteres)
+            //verifica senha. não pode estar vazia e mínimo 6 caracteres)
             if (!senha.value.trim() || senha.value.length < 6) {
                 document.getElementById('erroSenha').textContent = 'A senha deve ter pelo menos 6 caracteres.';
                 senha.classList.add('is-invalid');
                 formValido = false;
             }
 
-            // Se algo estiver errado, impede a página de enviar os dados para o servidor
+            //se algo estiver errado, impede a página de enviar os dados para o servidor
             if (!formValido) {
                 event.preventDefault(); 
             }

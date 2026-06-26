@@ -9,7 +9,7 @@
 </head>
 <body class="bg-light">
 
-    <!-- Barra de Navegação -->
+    <!--Barra de Navegação-->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/">EditFreela</a>
@@ -32,7 +32,7 @@
         </div>
     </nav>
 
-    <!-- Formulário de Cadastro -->
+    <!--Formulário de Cadastro-->
     <div class="container mt-5 mb-5">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
@@ -42,7 +42,7 @@
                         
                         <form id="formCadastro" action="/cadastro" method="POST" novalidate>
                             
-                            <!-- Escolha do Tipo de Usuário -->
+                            <!--escolha do tipo de usuário-->
                             <div class="mb-4">
                                 <label class="form-label d-block fw-bold">Qual é o seu objetivo no EditFreela?</label>
                                 <div class="form-check form-check-inline">
@@ -58,7 +58,7 @@
                                 </div>
                             </div>
 
-                            <!-- Campo Nome -->
+                            <!--nome-->
                             <div class="mb-3">
                                 <label for="nome" class="form-label">Nome Completo (Nome + Sobrenome)</label>
                                 <input type="text" class="form-control" id="nome" name="nome" required>
@@ -75,7 +75,7 @@
                                 </div>
                             </div>
 
-                            <!-- Campo Senha -->
+                            <!--senha-->
                             <div class="mb-3">
                                 <label for="senha" class="form-label">Senha</label>
                                 <input type="password" class="form-control" id="senha" name="senha" required>
@@ -84,7 +84,7 @@
                                 </div>
                             </div>
 
-                            <!-- Campo Confirmar Senha -->
+                            <!--confirmar Senha-->
                             <div class="mb-4">
                                 <label for="confirmarSenha" class="form-label">Confirme a Senha</label>
                                 <input type="password" class="form-control" id="confirmarSenha" required>
@@ -105,12 +105,12 @@
         </div>
     </div>
 
-    <!-- Lógica de Validação Front-End -->
+    <!--Validação Front-End-->
     <script>
         document.getElementById('formCadastro').addEventListener('submit', function(event) {
             let formValido = true;
             
-            // Capturar os campos
+            //capturar os campos do formulario
             const tipoEditor = document.getElementById('tipoEditor');
             const tipoCliente = document.getElementById('tipoCliente');
             const nome = document.getElementById('nome');
@@ -118,21 +118,20 @@
             const senha = document.getElementById('senha');
             const confirmarSenha = document.getElementById('confirmarSenha');
             
-            // Limpar erros anteriores
+            //limpa erros 
             nome.classList.remove('is-invalid');
             email.classList.remove('is-invalid');
             senha.classList.remove('is-invalid');
             confirmarSenha.classList.remove('is-invalid');
             document.getElementById('erroTipo').style.display = 'none';
 
-            // 1. Verificar Tipo de Usuário (Radio buttons)
+            //verifica tipo de usuário
             if (!tipoEditor.checked && !tipoCliente.checked) {
                 document.getElementById('erroTipo').style.display = 'block';
                 formValido = false;
             }
 
-            // 2. Verificar Nome Completo (Sem números e com sobrenome)
-            // Regex: Pelo menos uma palavra com letras (aceitando acentos), seguida de um espaço, seguida de mais letras.
+            //verifica nome completo (sem números e com sobrenome)
             const regexNome = /^[A-ZÀ-ÖØ-Þ][a-zA-ZÀ-ÿ]*(?:\s+[A-ZÀ-ÖØ-Þ][a-zA-ZÀ-ÿ]*)+$/;
             if (!nome.value.trim() || !regexNome.test(nome.value.trim())) {
             nome.classList.add('is-invalid');
@@ -140,8 +139,7 @@
             console.log("Erro barrado: Nome não tem as iniciais maiúsculas ou está incompleto.");   
         }
 
-            // 3. Verificar E-mail (@email.com.br)
-            // Adicionamos o \.br no final da regra
+            //verifica email (formato: blabla@email.com.br)
             const regexEmail = /^[^\s@]+@email\.com\.br$/i;
             if (!email.value.trim() || !regexEmail.test(email.value.trim())) {
             email.classList.add('is-invalid');
@@ -149,19 +147,19 @@
             console.log("Erro barrado: E-mail fora do padrão @email.com.br.");
             }
 
-            // 4. Verificar Senha
+            //verifica senha
             if (!senha.value.trim() || senha.value.length < 6) {
                 senha.classList.add('is-invalid');
                 formValido = false;
             }
 
-            // 5. Verificar se as senhas coincidem
+            //verifica se senhas coincidem
             if (senha.value !== confirmarSenha.value || !confirmarSenha.value.trim()) {
                 confirmarSenha.classList.add('is-invalid');
                 formValido = false;
             }
 
-            // Se inválido, bloqueia o envio
+            //inválido. bloqueia o envio
             if (!formValido) {
                 event.preventDefault(); 
             }

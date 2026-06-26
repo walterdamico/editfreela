@@ -24,7 +24,7 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// --- ROTAS DE PÁGINAS ---
+//ROTAS DE PÁGINAS
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'views', 'login.html')));
 app.get('/cadastro', (req, res) => res.sendFile(path.join(__dirname, 'views', 'cadastro.html')));
@@ -37,7 +37,7 @@ app.get('/mural', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'mural.html'));
 });
 
-// --- AUTENTICAÇÃO ---
+//AUTENTICAÇÃO
 app.post('/cadastro', async (req, res) => {
   const { tipo_usuario, nome, email, senha } = req.body;
   try {
@@ -75,10 +75,9 @@ app.get('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-// --- API DE USUÁRIO E PERFIL ---
+//API DE USUÁRIO E PERFIL
 app.get('/api/usuario', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
-  // Agora puxamos o email e a descrição também
   const dados = await pool.query('SELECT id, nome, email, tipo_usuario AS tipo, whatsapp, youtube, descricao FROM usuarios WHERE id = $1', [req.session.usuario.id]);
   res.json(dados.rows[0]);
 });
@@ -86,12 +85,11 @@ app.get('/api/usuario', async (req, res) => {
 app.post('/api/perfil', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
   const { whatsapp, youtube, descricao } = req.body;
-  // Atualiza também a descrição no banco
   await pool.query('UPDATE usuarios SET whatsapp = $1, youtube = $2, descricao = $3 WHERE id = $4', [whatsapp, youtube, descricao, req.session.usuario.id]);
   res.json({ sucesso: true });
 });
 
-// --- OPERAÇÕES DO MURAL DE VAGAS ---
+//OPERAÇÕES DO MURAL DE VAGAS
 app.get('/api/vagas', async (req, res) => {
   if (!req.session.usuario) return res.status(401).json({ erro: 'Não autenticado' });
   const userId = req.session.usuario.id;
@@ -152,7 +150,7 @@ app.delete('/api/vagas/:id', async (req, res) => {
   res.json({ sucesso: true });
 });
 
-// --- SISTEMA DE SOLICITAÇÕES ---
+//SISTEMA DE SOLICITAÇÕES
 app.post('/api/vagas/:id/candidatar', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'editor') return res.status(403).json({ erro: 'Apenas editores' });
   try {
@@ -171,7 +169,6 @@ app.delete('/api/vagas/:id/cancelar', async (req, res) => {
 
 app.get('/api/vagas/:id/solicitacoes', async (req, res) => {
   if (!req.session.usuario || req.session.usuario.tipo !== 'cliente') return res.status(403).json({ erro: 'Negado' });
-  // Agora a query puxa também o email e a descricao do editor
   const query = `
     SELECT s.id, s.status, s.vaga_id, u.nome AS editor_nome, u.whatsapp, u.youtube, u.email, u.descricao 
     FROM solicitacoes s

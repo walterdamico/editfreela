@@ -249,7 +249,7 @@
             }
         }
 
-        // CONTROLADOR DE CANDIDATOS DO CLIENTE
+        //CONTROLADOR DE CANDIDATOS DO CLIENTE
         async function verSolicitacoes(vagaId) {
             const res = await fetch(`/api/vagas/${vagaId}/solicitacoes`);
             const sols = await res.json();
@@ -270,7 +270,6 @@
                     acoes = `<span class="badge bg-secondary p-2">Recusado</span>`;
                 }
 
-                // Novos campos puxando E-mail e Descrição
                 const ytLink = s.youtube ? `<a href="${s.youtube}" target="_blank" class="text-primary fw-bold">${s.youtube}</a>` : '<span class="text-muted">Não inserido</span>';
                 const waNumero = s.whatsapp ? `<span class="text-dark fw-bold">${s.whatsapp}</span>` : '<span class="text-muted">Não inserido</span>';
                 const emailTexto = s.email ? `<span class="text-dark fw-bold">${s.email}</span>` : '<span class="text-muted">Não inserido</span>';
