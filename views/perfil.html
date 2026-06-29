@@ -46,6 +46,12 @@
 
                 <button type="submit" class="btn btn-primary w-100 fw-bold mt-3">Salvar Alterações</button>
             </form>
+
+                <hr class="mt-4 mb-3">
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deletarMinhaConta()">Excluir minha conta permanentemente</button>
+                </div>
+                
         </div>
     </div>
 
@@ -99,6 +105,30 @@
                 alert("Erro ao atualizar perfil.");
             }
         });
+
+        // NOVO: Função executada ao clicar no botão de exclusão
+        async function deletarMinhaConta() {
+            const confirmar = confirm("ATENÇÃO: Tem certeza que deseja excluir sua conta?\n\nIsso apagará permanentemente seu cadastro, suas vagas e todas as candidaturas feitas de forma irreversível!");
+            
+            if (confirmar) {
+                const res = await fetch('/api/usuario', {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    const dados = await res.json();
+                    if (dados.sucesso) {
+                        alert("Sua conta foi excluída com sucesso.");
+                        window.location.href = '/cadastro'; // Envia para a página de registro
+                    } else {
+                        alert("Erro ao processar a exclusão da conta.");
+                    }
+                } else {
+                    alert("Erro ao conectar com o servidor.");
+                }
+            }
+        }
+
     </script>
 </body>
 </html>

@@ -108,7 +108,7 @@
             carregarVagas();
         });
 
-        async function carregarVagas() {
+async function carregarVagas() {
             const res = await fetch('/api/vagas');
             const vagas = await res.json();
             vagasCarregadasMemoria = vagas; 
@@ -127,7 +127,22 @@
                 if (usuarioLogado.tipo === 'cliente') {
                     if (vaga.cliente_id === usuarioLogado.id) {
                         if (vaga.vaga_aceita) {
-                            botoesHtml = `<div class="text-success small fw-bold text-center border p-2 bg-white rounded">Contratação concluída. Esta vaga está finalizada e trancada.</div>`;
+                            // Criar strings seguras trocando aspas por entidades HTML para não quebrar o onclick do botão
+                            const nomeEscapado = (vaga.editor_nome || '').replace(/'/g, "\\'");
+                            const whatsappEscapado = (vaga.editor_whatsapp || '').replace(/'/g, "\\'");
+                            const emailEscapado = (vaga.editor_email || '').replace(/'/g, "\\'");
+                            const youtubeEscapado = (vaga.editor_youtube || 'Não informado').replace(/'/g, "\\'");
+                            const descEscapada = (vaga.editor_descricao || 'Sem descrição informada.').replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "");
+
+                            botoesHtml = `
+                                <div class="text-success small fw-bold text-center border p-2 bg-white rounded mb-2">
+                                    Contratação concluída. Esta vaga está finalizada e trancada.
+                                </div>
+                                <button class="btn btn-info btn-sm text-white w-100 fw-bold" 
+                                    onclick="verEditorContratado('${nomeEscapado}', '${whatsappEscapado}', '${emailEscapado}', '${youtubeEscapado}', '${descEscapada}')">
+                                     Ver Informações do Editor
+                                </button>
+                            `;
                         } else {
                             botoesHtml = `
                                 <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditar(${vaga.id})">Editar</button>
@@ -141,7 +156,7 @@
                 } else {
                     if (vaga.vaga_aceita) {
                         if (vaga.meu_status === 'aprovada') {
-                            botoesHtml = `<div class="alert alert-success py-1 px-2 m-0 text-center fw-bold small">Solicitação Aceita</div>`;
+                            botoesHtml = `<div class="alert alert-success py-1 px-2 m-0 text-center fw-bold small">Solicitação Aceita, o Contratante Entrará em Contato</div>`;
                         } else {
                             botoesHtml = `<div class="alert alert-danger py-1 px-2 m-0 text-center fw-bold small">Solicitação Recusada</div>`;
                         }
@@ -319,6 +334,18 @@
             }
             carregarVagas();
         }
+
+        function verEditorContratado(nome, whatsapp, email, youtube, descricao) {
+            alert(
+                "DADOS DO EDITOR CONTRATADO\n\n" +
+                "Nome: " + nome + "\n" +
+                "WhatsApp: " + whatsapp + "\n" +
+                "E-mail: " + email + "\n" +
+                "Portfólio: " + youtube + "\n\n" +
+                "Sobre o editor:\n" + descricao
+            );
+        }
+
     </script>
 </body>
 </html>
