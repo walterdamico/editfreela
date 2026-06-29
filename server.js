@@ -95,19 +95,19 @@ app.delete('/api/usuario', async (req, res) => {
   const userId = req.session.usuario.id;
 
   try {
-    // 1. Apaga candidaturas/solicitações feitas por este usuário (se for editor)
+    //apaga candidaturas/solicitações feitas por este usuário (se for editor)
     await pool.query('DELETE FROM solicitacoes WHERE editor_id = $1', [userId]);
 
-    // 2. Apaga candidaturas/solicitacoes que as vagas deste usuário receberam (se for cliente)
+    //apaga candidaturas/solicitacoes que as vagas deste usuário receberam (se for cliente)
     await pool.query('DELETE FROM solicitacoes WHERE vaga_id IN (SELECT id FROM vagas WHERE cliente_id = $1)', [userId]);
 
-    // 3. Apaga todas as vagas criadas por este usuário (se for cliente)
+    //apaga todas as vagas criadas por este usuário (se for cliente)
     await pool.query('DELETE FROM vagas WHERE cliente_id = $1', [userId]);
 
-    // 4. Apaga o usuário do banco de dados (removerá email, senha, etc.)
+    //apaga o usuário do banco de dados (remover email, senha, etc.)
     await pool.query('DELETE FROM usuarios WHERE id = $1', [userId]);
 
-    // 5. Destrói a sessão do navegador
+    //destrói a sessão do navegador
     req.session.destroy();
     res.json({ sucesso: true });
   } catch (erro) {

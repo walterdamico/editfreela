@@ -127,7 +127,6 @@ async function carregarVagas() {
                 if (usuarioLogado.tipo === 'cliente') {
                     if (vaga.cliente_id === usuarioLogado.id) {
                         if (vaga.vaga_aceita) {
-                            // Criar strings seguras trocando aspas por entidades HTML para não quebrar o onclick do botão
                             const nomeEscapado = (vaga.editor_nome || '').replace(/'/g, "\\'");
                             const whatsappEscapado = (vaga.editor_whatsapp || '').replace(/'/g, "\\'");
                             const emailEscapado = (vaga.editor_email || '').replace(/'/g, "\\'");

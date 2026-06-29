@@ -82,7 +82,7 @@
 
             //VALIDAR DO YOUTUBE (apenas links válidos do youtube )
             if (youtube !== "") {
-                //regex que exige que o domínio seja youtube.com ou youtu.be e tenha algum caminho (o canal ou vídeo) depois da barra
+                //"regex" exige que o domínio seja youtube.com ou youtu.be e tenha algum caminho (o canal ou vídeo) depois da barra
                 const regexYoutube = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i;
                 if (!regexYoutube.test(youtube)) {
                     alert("O link do YouTube é inválido!\n\nPor favor, insira o endereço completo de um canal ou vídeo.\nExemplo: https://www.youtube.com/@SeuCanal");
@@ -106,7 +106,6 @@
             }
         });
 
-        // NOVO: Função executada ao clicar no botão de exclusão
         async function deletarMinhaConta() {
             const confirmar = confirm("ATENÇÃO: Tem certeza que deseja excluir sua conta?\n\nIsso apagará permanentemente seu cadastro, suas vagas e todas as candidaturas feitas de forma irreversível!");
             
@@ -119,7 +118,7 @@
                     const dados = await res.json();
                     if (dados.sucesso) {
                         alert("Sua conta foi excluída com sucesso.");
-                        window.location.href = '/cadastro'; // Envia para a página de registro
+                        window.location.href = '/cadastro'; //envia para a página de registro
                     } else {
                         alert("Erro ao processar a exclusão da conta.");
                     }
